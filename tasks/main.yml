@@ -1,0 +1,102 @@
+---
+# tasks file for ansible-role-jitsi-monitoring
+
+- name: install base packages
+  apt:
+      pkg:
+      - ufw
+      - bmon
+      - htop
+      - vim
+      - nginx
+
+- name: configure firewall rules
+  ufw:
+      rule: "{{ item.rule }}"
+      port: "{{ item.port }}"
+      proto: "{{ item.proto }}"
+  with_items:
+      - { rule: 'allow', port: '22', proto: 'tcp' }
+      - { rule: 'allow', port: '80', proto: 'tcp' }
+      - { rule: 'allow', port: '443', proto: 'tcp' }
+      - { rule: 'allow', port: '3001', proto: 'tcp' }
+
+- name: set logging
+  ufw:
+    logging: 'off'
+
+- name: set ufw policy
+  ufw:
+    state: enabled
+    policy: deny
+
+- name: add gpg key for grafana repo
+  apt_key:
+      url: https://packages.grafana.com/gpg.key
+      state: present
+
+- name: add grafana stable apt repo
+  apt_repository:
+      repo: deb https://packages.grafana.com/enterprise/deb stable main
+      state: present
+
+- name: add key for influx apt repo
+  apt_key:
+      url: https://repos.influxdata.com/influxdb.key
+      state: present
+
+- name: add influxdb apt-repository
+  apt_repository:
+        repo: deb https://repos.influxdata.com/ubuntu bionic stable
+        state: present
+
+- name: install influx packages and grafana-server
+  apt:
+     pkg:
+         - telegraf
+         - influxdb
+         - grafana
+
+- name: deploy grafana config
+  copy:
+      src: grafana.ini
+      dest: /etc/grafana/grafana.ini
+
+- name: stop grafana server
+  systemd:
+      name: grafana-server
+      state: stopped
+
+- name: clean old grafana database
+  file:
+      path: /var/lib/grafana
+      state: absent
+
+- name: start grafana-server
+  systemd:
+      name: grafana
+      state: started
+
+- name: deploy influxdb config
+  copy:
+      src: influxdb.conf
+      dest: /etc/influxdb/influxdb.conf
+
+- name: restart influxdb service
+  systemd:
+      name: influxd
+      state: restarted
+
+- name: create influxdb user for reporting instances
+  shell: influx user create -n reporting -p {{ telegraf_secret }}
+
+- name: deploy nginx config for grafana
+  template:
+      src: dashboard.mydomain.de.j2
+      dest: /etc/nginx/sites-available/{{ grafana_domain }}
+
+- name: enable vhost
+  file:
+    src: /etc/nginx/sites-available/{{ grafana_domain }}
+    dest: /etc/nginx/sites-enabled/{{ grafana_domain }}
+    state: link

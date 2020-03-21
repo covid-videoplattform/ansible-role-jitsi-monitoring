@@ -1,0 +1,4 @@
+---
+# defaults file for ansible-role-jitsi-monitoring
+grafana_domain: monitoring.mydomain.de
+telegraf_secret: <mycrazysecret>

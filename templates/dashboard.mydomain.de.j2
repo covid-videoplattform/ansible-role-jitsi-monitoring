@@ -1,0 +1,31 @@
+server {
+    listen 443;
+    listen [::]:443;
+    server_name {{ grafana_domain }};
+
+    ssl_certificate           /etc/letsencrypt/live/{{ grafana_domain }}/fullchain.pem;
+    ssl_certificate_key       /etc/letsencrypt/live/{{ grafana_domain }}/privkey.pem;
+    ssl_trusted_certificate   /etc/letsencrypt/live/{{ grafana_domain }}/chain.pem;
+
+    ssl on;
+    ssl_session_cache  builtin:1000  shared:SSL:10m;
+    ssl_protocols TLSv1.2;
+    ssl_ciphers EECDH+AESGCM:EDH+AESGCM;
+    ssl_prefer_server_ciphers on;
+
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload";
+
+    access_log            /var/log/nginx/{{grafana-domain}}-access.log;
+    client_max_body_size 0;
+    location / {
+
+      proxy_set_header        Host $host;
+      proxy_set_header        X-Real-IP $remote_addr;
+      proxy_set_header        X-Forwarded-Host $host:$server_port;
+      proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header        X-Forwarded-Proto $scheme;
+
+      proxy_pass          http://localhost:3000;
+      proxy_read_timeout  90;
+    }
+}
