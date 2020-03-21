@@ -74,7 +74,7 @@
 
 - name: start grafana-server
   systemd:
-      name: grafana
+      name: grafana-server
       state: started
 
 - name: deploy influxdb config
