@@ -85,7 +85,6 @@
       state: directory
       owner: grafana
       group: grafana
-  when: grafana_inst.changed
 
 - name: start grafana-server
   systemd:
@@ -103,7 +102,7 @@
       state: restarted
 
 - name: create user for telegraf in influxdb
-  shell: /bin/influx -username telegraf -password {{ telegraf_secret }} --execute "CREATE USER telegraf WITH PASSWORD '{{ telegraf_secret }}' WITH all privileges"
+  command: /usr/bin/influx -username telegraf -password {{ telegraf_secret }} --execute "CREATE USER telegraf WITH PASSWORD '{{ telegraf_secret }}' WITH all privileges"
 
 - name: deploy nginx config for grafana
   template:
