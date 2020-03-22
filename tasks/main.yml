@@ -19,7 +19,7 @@
       - { rule: 'allow', port: '22', proto: 'tcp' }
       - { rule: 'allow', port: '80', proto: 'tcp' }
       - { rule: 'allow', port: '443', proto: 'tcp' }
-      - { rule: 'allow', port: '3001', proto: 'tcp' }
+      - { rule: 'allow', port: '8086', proto: 'tcp' }
 
 - name: set logging
   ufw:
@@ -55,7 +55,13 @@
      pkg:
          - telegraf
          - influxdb
-         - grafana
+
+
+- name: install grafana server
+  apt:
+      pkg:
+          - grafana
+  register: grafana_inst
 
 - name: deploy grafana config
   copy:
@@ -71,6 +77,15 @@
   file:
       path: /var/lib/grafana
       state: absent
+  when: grafana_inst.changed
+
+- name: create folder for grafana database
+  file:
+      path: /var/lib/grafana
+      state: present
+      owner: grafana
+      group: grafana
+  when: grafana_inst.changed
 
 - name: start grafana-server
   systemd:
@@ -87,8 +102,8 @@
       name: influxd
       state: restarted
 
-- name: create influxdb user for reporting instances
-  shell: influx user create -n reporting -p {{ telegraf_secret }}
+- name: create user for telegraf in influxdb
+  shell: /bin/influx -username telegraf -password {{ telegraf_secret }} --execute "CREATE USER telegraf WITH PASSWORD '{{ telegraf_secret }}' WITH all privileges"
 
 - name: deploy nginx config for grafana
   template:

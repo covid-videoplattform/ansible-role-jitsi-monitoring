@@ -15,7 +15,7 @@ server {
 
     add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload";
 
-    access_log            /var/log/nginx/{{grafana-domain}}-access.log;
+    access_log            /var/log/nginx/{{ grafana_domain }}-access.log;
     client_max_body_size 0;
     location / {
 
