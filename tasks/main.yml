@@ -55,7 +55,7 @@
      pkg:
          - telegraf
          - influxdb
-
+  register: influxdb_inst
 
 - name: install grafana server
   apt:
@@ -102,7 +102,8 @@
       state: restarted
 
 - name: create user for telegraf in influxdb
-  command: /usr/bin/influx -username telegraf -password {{ telegraf_secret }} --execute "CREATE USER telegraf WITH PASSWORD '{{ telegraf_secret }}' WITH all privileges"
+  shell: /usr/bin/influx -username telegraf -password {{ telegraf_secret }} --execute "CREATE USER telegraf WITH PASSWORD '{{ telegraf_secret }}' WITH all privileges"
+  when: influxdb_inst.changed
 
 - name: deploy nginx config for grafana
   template:
