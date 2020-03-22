@@ -82,7 +82,7 @@
 - name: create folder for grafana database
   file:
       path: /var/lib/grafana
-      state: present
+      state: directory
       owner: grafana
       group: grafana
   when: grafana_inst.changed
